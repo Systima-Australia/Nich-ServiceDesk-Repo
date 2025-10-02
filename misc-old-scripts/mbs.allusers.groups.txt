@@ -1,0 +1,149 @@
+<#
+.SYNOPSIS
+	Add a user to standard groups for 'All users' at MBS Insurance
+.DESCRIPTION
+	This script asks you to enter the new user account and stores it as $User.  It adds them to all groups listed under $AllUserGroups
+.NOTES
+	File Name:	mbs.allusers.groups.ps1
+	Version:	0.5
+	Author: 	Nicholas Constantinidis
+	Addendum:	https://docs.microsoft.com/en-us/microsoft-365/enterprise/connect-to-all-microsoft-365-services-in-a-single-windows-powershell-window?view=o365-worldwide was used as a template to connect to multiple MS services at one time.
+#>
+
+# Here are all the commands in a single block when using the Microsoft Azure Active Directory Module for PowerShell module.
+# When finished, run
+# Get-PSSession | Remove-PSSession 
+
+
+$credential = Get-Credential
+
+Connect-MsolService -Credential $credential
+Connect-AzureAD -Credential $credential
+
+$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri "https://outlook.office365.com/powershell-liveid/" -Credential $credential -Authentication Basic -AllowRedirection 
+Import-PSSession $session 
+
+# Connect-ExchangeOnline -Credential $credential -ShowProgress $true
+
+
+$User = Read-Host -Prompt "Please enter a user name"
+
+$AllUsersGroups = @(
+"SEC-MBS_SHPT_FOLDER_1.Advice Documents","SEC-MBS_SHPT_FOLDER_2.InsurerDocuments","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsHLBInsurance","SEC-MBS_SHPT_FOLDER_ClientsHLIG(NSW)","SEC-MBS_SHPT_FOLDER_ClientsJBWere","SEC-MBS_SHPT_FOLDER_ClientsMBSInsurance","SEC-MBS_SHPT_FOLDER_ClientsMBSWA","SEC-MBS_SHPT_FOLDER_ClientsPitcherPartners","SEC-MBS_SHPT_FOLDER_Projects","SEC-MBS_SHPT_FOLDER_RenewalsAndReviews","SEC-MBS_SHPT_FOLDER_VBP","SEC-MBS_SHPT_FOLDER_ZZArchive_ReadOnly")
+
+Write-Host "Adding user" $User to groups:
+$AllUsersGroups | out-string
+
+ForEach($Group in $AllUsersGroups) {
+	Add-ADPrincipalGroupMembership -identity $User -MemberOf $Group
+}
+
+
+# get-azureadgroup -filter "Displayname eq 'SEC-MBS_SHPT_FOLDER_1.Advice Documents'"
+
+<#  Testing
+
+
+ForEach($Group in $AllUsersGroups) {
+	Add-AzureADGroupmember -ObjectId $Group.ObjectId -RefObjectId $user.ObjectId
+}
+
+
+Get-AzureADUser -SearchString 'millie'
+Get-MsolUser -SearchString 'millie' | ft UserP*,ObjectID
+
+Get-AzureADGroup -SearchString "All"
+Get-MsolGroup -SearchString "All"
+
+
+
+$millie = Get-MsolUser -SearchString 'millie' | ft objectid
+$millie = 8ae35135-1cab-4ef5-998d-326e46b1eae8
+
+$hlb = Get-AzureADGroup -SearchString "SEC-MBS_SHPT_FOLDER_ClientsHLBInsurance"
+$hlb = 1fbc8429-a8f1-4a77-a59f-2a96bfec88a7 but is an object, not a string
+$hlb.objectid = 1fbc8429-a8f1-4a77-a59f-2a96bfec88a7
+
+Error message:
+
+PS C:\> get-azureadgroupmember -objectid $hlb
+Get-AzureADGroupMember : Cannot convert 'System.Object[]' to the type 'System.String' required by parameter
+'ObjectId'. Specified method is not supported.
+At line:1 char:34
++ get-azureadgroupmember -objectid $hlb
++                                  ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-AzureADGroupMember], ParameterBindingException
+    + FullyQualifiedErrorId : CannotConvertArgument,Microsoft.Open.AzureAD16.PowerShell.GetGroupMembers
+#>
+
+
+__________
+
+
+$User = Read-Host -Prompt "Please enter a user name"
+
+$AllUsersGroups = @(
+"SEC-MBS_SHPT_FOLDER_1.Advice Documents","SEC-MBS_SHPT_FOLDER_2.InsurerDocuments","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsHLBInsurance","SEC-MBS_SHPT_FOLDER_ClientsHLIG(NSW)","SEC-MBS_SHPT_FOLDER_ClientsJBWere","SEC-MBS_SHPT_FOLDER_ClientsMBSInsurance","SEC-MBS_SHPT_FOLDER_ClientsMBSWA","SEC-MBS_SHPT_FOLDER_ClientsPitcherPartners","SEC-MBS_SHPT_FOLDER_Projects","SEC-MBS_SHPT_FOLDER_RenewalsAndReviews","SEC-MBS_SHPT_FOLDER_VBP","SEC-MBS_SHPT_FOLDER_ZZArchive_ReadOnly")
+
+Write-Host "Adding user" $User.DisplayName "to groups:"
+$Group. | out-string
+
+ForEach($Group in $AllUsersGroups) {
+	
+	Add-AzureADGroupmember -ObjectId $Group.ObjectId -RefObjectId $user.ObjectId
+}
+
+
+
+
+$userid = Get-AZureADUser -searchstring $username | select objectid
+
+PS C:\> $userid.objectId
+8ae35135-1cab-4ef5-998d-326e46b1eae8
+
+PS C:\> $AllUsersGroups |select-object -first 1
+SEC-MBS_SHPT_FOLDER_1.Advice Documents
+
+get-azureadgroupmember -objectid $hlb.objectid
+-> prints out list of group members
+
+
+->
+
+$groupname = $AllUsersGroups |select-object -first 1
+-> $groupname = SEC-MBS_SHPT_FOLDER_1.Advice Documents
+$groupid = get-azureadgroup -searchstring $groupname
+-> $groupid.objectid = 942c2d19-4dad-4d6d-8d6c-5afe4aa82ad5
+
+
+____
+
+
+# Get username to work with
+$User = Read-Host -Prompt "Please enter a user name"
+
+# Set $user to object - will include ObjectId, DisplayName, UserPrincipalName, and UserType
+$User = Get-AzureADUser -SearchString $user
+
+# Static list of security groups for 'all users' by default
+$AllUsersGroups = @(
+"SEC-MBS_SHPT_FOLDER_1.Advice Documents","SEC-MBS_SHPT_FOLDER_2.InsurerDocuments","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsCRA","SEC-MBS_SHPT_FOLDER_ClientsHLBInsurance","SEC-MBS_SHPT_FOLDER_ClientsHLIG(NSW)","SEC-MBS_SHPT_FOLDER_ClientsJBWere","SEC-MBS_SHPT_FOLDER_ClientsMBSInsurance","SEC-MBS_SHPT_FOLDER_ClientsMBSWA","SEC-MBS_SHPT_FOLDER_ClientsPitcherPartners","SEC-MBS_SHPT_FOLDER_Projects","SEC-MBS_SHPT_FOLDER_RenewalsAndReviews","SEC-MBS_SHPT_FOLDER_VBP","SEC-MBS_SHPT_FOLDER_ZZArchive_ReadOnly")
+
+# Progress report
+Write-Host "Adding user" $User.DisplayName "to groups:"
+
+# Loop to iterate across array
+ForEach($Group in $AllUsersGroups) {
+	# For given $group name in array, get object so we have the ObjectID
+	$Group = Get-AzureADGroup -SearchString $Group
+	# Add user to each group in array. -ObjectId is for the group, -RefObjectId is for the user
+	Add-AzureADGroupmember -InformationVariable $Report -ObjectId $Group.ObjectId -RefObjectId $User.ObjectId
+	# Debug
+	Write-Host $Group.DisplayName " status: " $Report
+	
+}
+
+
+
+
+
